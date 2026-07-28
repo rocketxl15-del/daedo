@@ -1,4 +1,116 @@
-<!-- 4. 의견 게시판 섹션 -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>맞춤형 AI 영어 해석기</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .canvas-container {
+      position: relative;
+      touch-action: none;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-12">
+
+  <!-- Header -->
+  <header class="bg-indigo-600 text-white py-6 shadow-md">
+    <div class="max-w-3xl mx-auto px-4 text-center">
+      <h1 class="text-2xl sm:text-3xl font-bold">⚡ AI 맞춤 영어 해석기</h1>
+      <p class="text-indigo-100 text-sm mt-1">회원가입 없이 무료로 빠르고 정확하게 스타일별 해석</p>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-4 mt-8">
+    
+    <!-- 입력 방식 탭 -->
+    <div class="flex border-b border-slate-200 mb-6 bg-white rounded-t-xl overflow-hidden shadow-sm">
+      <button id="tabText" onclick="switchTab('text')" class="flex-1 py-3 text-center font-medium text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50">
+        <i class="fa-solid fa-pen-to-square mr-2"></i>텍스트 직접 입력
+      </button>
+      <button id="tabImage" onclick="switchTab('image')" class="flex-1 py-3 text-center font-medium text-slate-500 hover:text-indigo-600">
+        <i class="fa-solid fa-camera mr-2"></i>사진 영역 선택
+      </button>
+    </div>
+
+    <!-- 1. 텍스트 입력 섹션 -->
+    <section id="sectionText" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-6">
+      <label class="block text-sm font-semibold text-slate-700 mb-2">해석할 영문 입력</label>
+      <textarea id="inputText" rows="5" class="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none text-slate-700 placeholder-slate-400" placeholder="해석하고 싶은 영어 문장이나 글을 여기에 붙여넣으세요..."></textarea>
+    </section>
+
+    <!-- 2. 사진 업로드 및 크롭 섹션 -->
+    <section id="sectionImage" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-6">
+      <label class="block text-sm font-semibold text-slate-700 mb-2">사진 업로드 후 원하는 영역 드래그 지정</label>
+      
+      <input type="file" id="imageInput" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+      <button onclick="document.getElementById('imageInput').click()" class="w-full py-3 px-4 border-2 border-dashed border-indigo-300 bg-indigo-50/50 text-indigo-600 font-medium rounded-xl hover:bg-indigo-50 transition flex items-center justify-center gap-2 mb-4">
+        <i class="fa-solid fa-upload"></i> 사진 파일 선택 또는 촬영
+      </button>
+
+      <div id="canvasWrapper" class="hidden flex-col items-center">
+        <p class="text-xs text-slate-500 mb-2">🖱️ 마우스나 손가락으로 해석할 문장 영역을 드래그하세요.</p>
+        <div class="canvas-container border border-slate-300 rounded-lg overflow-hidden max-w-full">
+          <canvas id="imageCanvas"></canvas>
+        </div>
+        <button onclick="resetCrop()" class="mt-2 text-xs text-slate-500 underline hover:text-slate-700">영역 선택 초기화</button>
+      </div>
+    </section>
+
+    <!-- 해석 스타일 선택 -->
+    <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-6">
+      <label class="block text-sm font-semibold text-slate-700 mb-3">🎨 원하는 해석 스타일 선택</label>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <button type="button" class="style-btn active bg-indigo-600 text-white p-3 rounded-xl border border-indigo-600 font-medium text-sm flex flex-col items-center gap-1" data-style="natural" onclick="selectStyle(this)">
+          <span>✨ 자연스러운 번역</span>
+          <span class="text-xs opacity-80 font-normal">매끄럽고 구어체적인 표현</span>
+        </button>
+        <button type="button" class="style-btn bg-slate-50 text-slate-700 p-3 rounded-xl border border-slate-200 font-medium text-sm hover:border-indigo-300 flex flex-col items-center gap-1" data-style="direct" onclick="selectStyle(this)">
+          <span>🎯 정확한 직역</span>
+          <span class="text-xs text-slate-500 font-normal">원문 구조 그대로 해석</span>
+        </button>
+        <button type="button" class="style-btn bg-slate-50 text-slate-700 p-3 rounded-xl border border-slate-200 font-medium text-sm hover:border-indigo-300 flex flex-col items-center gap-1" data-style="exam" onclick="selectStyle(this)">
+          <span>📖 시험/학습용</span>
+          <span class="text-xs text-slate-500 font-normal">구문 분석 + 단어 정리</span>
+        </button>
+        <button type="button" class="style-btn bg-slate-50 text-slate-700 p-3 rounded-xl border border-slate-200 font-medium text-sm hover:border-indigo-300 flex flex-col items-center gap-1" data-style="easy" onclick="selectStyle(this)">
+          <span>🎈 쉽게 풀어서</span>
+          <span class="text-xs text-slate-500 font-normal">초등학생도 이해하기 쉬운 설명</span>
+        </button>
+        <button type="button" class="style-btn bg-slate-50 text-slate-700 p-3 rounded-xl border border-slate-200 font-medium text-sm hover:border-indigo-300 flex flex-col items-center gap-1 col-span-2 sm:col-span-1" data-style="formal" onclick="selectStyle(this)">
+          <span>💼 비즈니스/격식</span>
+          <span class="text-xs text-slate-500 font-normal">정중한 격식체 번역</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 해석 실행 버튼 -->
+    <button id="submitBtn" onclick="requestTranslation()" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg transition duration-200 text-lg flex items-center justify-center gap-2">
+      <i class="fa-solid fa-wand-magic-sparkles"></i> AI 해석하기
+    </button>
+
+    <!-- 로딩 상태 -->
+    <div id="loading" class="hidden mt-8 text-center py-8">
+      <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-indigo-600 border-t-transparent mb-3"></div>
+      <p class="text-slate-600 font-medium">선택하신 스타일로 빠르게 해석하는 중...</p>
+    </div>
+
+    <!-- 결과 출력 영역 -->
+    <section id="resultSection" class="hidden mt-8 bg-white p-6 rounded-2xl shadow-sm border border-indigo-100">
+      <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-square-check text-indigo-600"></i> 해석 결과
+        </h2>
+        <button onclick="copyResult()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium py-1.5 px-3 rounded-lg transition flex items-center gap-1">
+          <i class="fa-regular fa-copy"></i> 복사하기
+        </button>
+      </div>
+      <div id="resultContent" class="text-slate-700 leading-relaxed whitespace-pre-wrap"></div>
+    </section>
+
+    <!-- 4. 의견 게시판 섹션 (파이어베이스 연동) -->
     <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mt-8">
       <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
         <i class="fa-solid fa-comments text-indigo-600"></i> 사용자 의견 게시판
@@ -27,3 +139,316 @@
         <!-- Firestore 데이터가 여기에 실시간 로드됩니다 -->
       </div>
     </section>
+
+  </main>
+
+  <script>
+    let activeTab = 'text';
+    let selectedStyle = 'natural';
+    let loadedImage = null;
+    let cropArea = null;
+    let isDragging = false;
+    let startX, startY;
+
+    const canvas = document.getElementById('imageCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // 탭 전환
+    function switchTab(tab) {
+      activeTab = tab;
+      const textBtn = document.getElementById('tabText');
+      const imgBtn = document.getElementById('tabImage');
+      const textSec = document.getElementById('sectionText');
+      const imgSec = document.getElementById('sectionImage');
+
+      if (tab === 'text') {
+        textBtn.className = 'flex-1 py-3 text-center font-medium text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50';
+        imgBtn.className = 'flex-1 py-3 text-center font-medium text-slate-500 hover:text-indigo-600';
+        textSec.classList.remove('hidden');
+        imgSec.classList.add('hidden');
+      } else {
+        imgBtn.className = 'flex-1 py-3 text-center font-medium text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50';
+        textBtn.className = 'flex-1 py-3 text-center font-medium text-slate-500 hover:text-indigo-600';
+        imgSec.classList.remove('hidden');
+        textSec.classList.add('hidden');
+      }
+    }
+
+    // 해석 스타일 선택
+    function selectStyle(btn) {
+      document.querySelectorAll('.style-btn').forEach(b => {
+        b.className = 'style-btn bg-slate-50 text-slate-700 p-3 rounded-xl border border-slate-200 font-medium text-sm hover:border-indigo-300 flex flex-col items-center gap-1';
+      });
+      btn.className = 'style-btn active bg-indigo-600 text-white p-3 rounded-xl border border-indigo-600 font-medium text-sm flex flex-col items-center gap-1';
+      selectedStyle = btn.getAttribute('data-style');
+    }
+
+    // 이미지 로드 및 캔버스 그리기
+    function handleImageUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        loadedImage = new Image();
+        loadedImage.onload = function() {
+          const maxW = Math.min(window.innerWidth - 64, 600);
+          const scale = maxW / loadedImage.width;
+          canvas.width = maxW;
+          canvas.height = loadedImage.height * scale;
+
+          drawCanvas();
+          document.getElementById('canvasWrapper').classList.remove('hidden');
+          document.getElementById('canvasWrapper').classList.add('flex');
+          setupCanvasEvents();
+        };
+        loadedImage.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function drawCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(loadedImage, 0, 0, canvas.width, canvas.height);
+
+      if (cropArea) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.drawImage(
+          loadedImage,
+          (cropArea.x / canvas.width) * loadedImage.width,
+          (cropArea.y / canvas.height) * loadedImage.height,
+          (cropArea.w / canvas.width) * loadedImage.width,
+          (cropArea.h / canvas.height) * loadedImage.height,
+          cropArea.x, cropArea.y, cropArea.w, cropArea.h
+        );
+
+        ctx.strokeStyle = '#6366f1';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(cropArea.x, cropArea.y, cropArea.w, cropArea.h);
+      }
+    }
+
+    function setupCanvasEvents() {
+      const getCoords = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return {
+          x: clientX - rect.left,
+          y: clientY - rect.top
+        };
+      };
+
+      const startSelect = (e) => {
+        isDragging = true;
+        const pos = getCoords(e);
+        startX = pos.x;
+        startY = pos.y;
+        cropArea = null;
+      };
+
+      const moveSelect = (e) => {
+        if (!isDragging) return;
+        const pos = getCoords(e);
+        cropArea = {
+          x: Math.min(startX, pos.x),
+          y: Math.min(startY, pos.y),
+          w: Math.abs(pos.x - startX),
+          h: Math.abs(pos.y - startY)
+        };
+        drawCanvas();
+      };
+
+      const endSelect = () => { isDragging = false; };
+
+      canvas.onmousedown = startSelect;
+      canvas.onmousemove = moveSelect;
+      canvas.onmouseup = endSelect;
+
+      canvas.ontouchstart = startSelect;
+      canvas.ontouchmove = moveSelect;
+      canvas.ontouchend = endSelect;
+    }
+
+    function resetCrop() {
+      cropArea = null;
+      drawCanvas();
+    }
+
+    function getSelectedImageData() {
+      if (!loadedImage) return null;
+      
+      const tempCanvas = document.createElement('canvas');
+      const tempCtx = tempCanvas.getContext('2d');
+
+      if (cropArea && cropArea.w > 10 && cropArea.h > 10) {
+        const scaleX = loadedImage.width / canvas.width;
+        const scaleY = loadedImage.height / canvas.height;
+
+        tempCanvas.width = cropArea.w * scaleX;
+        tempCanvas.height = cropArea.h * scaleY;
+
+        tempCtx.drawImage(
+          loadedImage,
+          cropArea.x * scaleX, cropArea.y * scaleY,
+          cropArea.w * scaleX, cropArea.h * scaleY,
+          0, 0, tempCanvas.width, tempCanvas.height
+        );
+      } else {
+        tempCanvas.width = loadedImage.width;
+        tempCanvas.height = loadedImage.height;
+        tempCtx.drawImage(loadedImage, 0, 0);
+      }
+
+      return tempCanvas.toDataURL('image/jpeg', 0.85);
+    }
+
+    // AI API 요청
+    async function requestTranslation() {
+      const loading = document.getElementById('loading');
+      const resultSec = document.getElementById('resultSection');
+      const resultContent = document.getElementById('resultContent');
+
+      let payload = { style: selectedStyle };
+
+      if (activeTab === 'text') {
+        const text = document.getElementById('inputText').value.trim();
+        if (!text) {
+          alert('해석할 영문 텍스트를 입력해주세요.');
+          return;
+        }
+        payload.text = text;
+      } else {
+        const imageData = getSelectedImageData();
+        if (!imageData) {
+          alert('해석할 사진을 업로드해주세요.');
+          return;
+        }
+        payload.image = imageData;
+      }
+
+      loading.classList.remove('hidden');
+      resultSec.classList.add('hidden');
+
+      try {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || '해석 중 오류가 발생했습니다.');
+
+        resultContent.textContent = data.result;
+        resultSec.classList.remove('hidden');
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        loading.classList.add('hidden');
+      }
+    }
+
+    function copyResult() {
+      const text = document.getElementById('resultContent').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('결과가 클립보드에 복사되었습니다.');
+      });
+    }
+  </script>
+
+  <!-- Firebase SDK (v10 JS Client via CDN) 및 파이어스토어 연동 -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    // 전달받은 Firebase 웹 설정값
+    const firebaseConfig = {
+      apiKey: "AIzaSyAdOIUeDgE19_72HEmjDpajtBUMor_BE4Y",
+      authDomain: "rainbow-d7005.firebaseapp.com",
+      projectId: "rainbow-d7005",
+      storageBucket: "rainbow-d7005.firebasestorage.app",
+      messagingSenderId: "1010663821123",
+      appId: "1:1010663821123:web:e4aea7cac11c5f23a3a9f6"
+    };
+
+    // Firebase 초기화
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const boardRef = collection(db, "opinions");
+
+    const boardList = document.getElementById('boardList');
+    const boardEmpty = document.getElementById('boardEmpty');
+
+    // 최신순 정렬(createdAt 내림차순) 및 실시간 바인딩
+    const q = query(boardRef, orderBy("createdAt", "desc"));
+    
+    onSnapshot(q, (snapshot) => {
+      boardList.innerHTML = '';
+      if (snapshot.empty) {
+        boardEmpty.classList.remove('hidden');
+      } else {
+        boardEmpty.classList.add('hidden');
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          const dateStr = data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleString('ko-KR') : '방금 전';
+          
+          const card = document.createElement('div');
+          card.className = "bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm";
+          card.innerHTML = `
+            <div class="flex justify-between items-center mb-2">
+              <span class="font-semibold text-slate-700 text-sm"><i class="fa-solid fa-user-tag text-indigo-500 mr-1"></i>${escapeHtml(data.nickname || '익명')}</span>
+              <span class="text-xs text-slate-400">${dateStr}</span>
+            </div>
+            <p class="text-slate-700 text-sm whitespace-pre-wrap">${escapeHtml(data.content || '')}</p>
+          `;
+          boardList.appendChild(card);
+        });
+      }
+    }, (error) => {
+      console.error("Firestore Error:", error);
+    });
+
+    // 글 등록 기능
+    window.submitOpinion = async function() {
+      const nicknameInput = document.getElementById('boardNickname');
+      const contentInput = document.getElementById('boardContent');
+      const submitBtn = document.getElementById('boardSubmitBtn');
+
+      const nickname = nicknameInput.value.trim() || '익명';
+      const content = contentInput.value.trim();
+
+      if (!content) {
+        alert('의견 내용을 입력해 주세요.');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerText = '등록 중...';
+
+      try {
+        await addDoc(boardRef, {
+          nickname: nickname,
+          content: content,
+          createdAt: serverTimestamp()
+        });
+        contentInput.value = '';
+        nicknameInput.value = '';
+        alert('의견이 성공적으로 등록되었습니다!');
+      } catch (e) {
+        console.error("의견 저장 실패:", e);
+        alert('의견 등록에 실패했습니다. Firestore 보안 규칙을 확인해 주세요.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane mr-1"></i> 의견 등록';
+      }
+    };
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>
