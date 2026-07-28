@@ -20,7 +20,7 @@ export default async function handler(req, res) {
 
   const selectedInstruction = styleInstructions[style] || styleInstructions.natural;
 
-  // Gemini 3.1 REST API 엔드포인트
+  // Gemini REST API 엔드포인트
   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash:generateContent?key=${apiKey}`;
 
   const parts = [];
