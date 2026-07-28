@@ -110,7 +110,7 @@
       <div id="resultContent" class="text-slate-700 leading-relaxed whitespace-pre-wrap"></div>
     </section>
 
-    <!-- 4. 사용자 의견 게시판 섹션 (Firestore) -->
+    <!-- 사용자 의견 게시판 섹션 (Firestore 연동) -->
     <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mt-8">
       <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
         <i class="fa-solid fa-comments text-indigo-600"></i> 사용자 의견 게시판
@@ -136,7 +136,7 @@
         등록된 의견이 없습니다. 첫 의견을 남겨보세요!
       </div>
       <div id="boardList" class="space-y-3">
-        <!-- Firestore 데이터가 여기에 실시간 로드됩니다 -->
+        <!-- Firestore 데이터가 실시간으로 자동 로드됩니다 -->
       </div>
     </section>
 
@@ -361,7 +361,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    // 지정해주신 dragon-c5112 웹 설정값
+    // 전달해주신 Firebase 설정값
     const firebaseConfig = {
       apiKey: "AIzaSyD92HcuIgFwvtGKA3djws7LO_DZIRpHWe4",
       authDomain: "dragon-c5112.firebaseapp.com",
@@ -379,7 +379,7 @@
     const boardList = document.getElementById('boardList');
     const boardEmpty = document.getElementById('boardEmpty');
 
-    // 최신순 정렬(createdAt 내림차순) 및 실시간 바인딩
+    // 최신순 정렬(createdAt 내림차순) 및 실시간 데이터 로드
     const q = query(boardRef, orderBy("createdAt", "desc"));
     
     onSnapshot(q, (snapshot) => {
@@ -408,7 +408,7 @@
       console.error("Firestore Error:", error);
     });
 
-    // 글 등록 기능
+    // Firestore 글 등록 함수
     window.submitOpinion = async function() {
       const nicknameInput = document.getElementById('boardNickname');
       const contentInput = document.getElementById('boardContent');
@@ -436,7 +436,7 @@
         alert('의견이 성공적으로 등록되었습니다!');
       } catch (e) {
         console.error("의견 저장 실패:", e);
-        alert('의견 등록에 실패했습니다. Firebase 콘솔에서 Firestore가 생성되어 있는지와 보안 규칙을 확인해 주세요.');
+        alert('의견 등록에 실패했습니다. Firebase 콘솔에서 Firestore 생성 여부 및 보안 규칙을 확인해 주세요.');
       } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane mr-1"></i> 의견 등록';
