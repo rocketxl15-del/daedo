@@ -110,36 +110,6 @@
       <div id="resultContent" class="text-slate-700 leading-relaxed whitespace-pre-wrap"></div>
     </section>
 
-    <!-- 4. 의견 게시판 섹션 (파이어베이스 연동) -->
-    <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mt-8">
-      <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-        <i class="fa-solid fa-comments text-indigo-600"></i> 사용자 의견 게시판
-      </h2>
-
-      <!-- 작성 폼 -->
-      <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
-        <div class="mb-3">
-          <input type="text" id="boardNickname" placeholder="닉네임 (선택사항)" class="w-full sm:w-1/2 p-2.5 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
-        </div>
-        <div class="mb-3">
-          <textarea id="boardContent" rows="3" placeholder="앱에 대한 의견이나 개선 요청사항을 작성해 주세요..." class="w-full p-3 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none bg-white"></textarea>
-        </div>
-        <div class="text-right">
-          <button id="boardSubmitBtn" onclick="submitOpinion()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-lg shadow transition flex items-center gap-1 inline-flex">
-            <i class="fa-solid fa-paper-plane mr-1"></i> 의견 등록
-          </button>
-        </div>
-      </div>
-
-      <!-- 게시물 목록 -->
-      <div id="boardEmpty" class="text-center py-6 text-slate-400 text-sm hidden">
-        등록된 의견이 없습니다. 첫 의견을 남겨보세요!
-      </div>
-      <div id="boardList" class="space-y-3">
-        <!-- Firestore 데이터가 여기에 실시간 로드됩니다 -->
-      </div>
-    </section>
-
   </main>
 
   <script>
@@ -212,9 +182,11 @@
       ctx.drawImage(loadedImage, 0, 0, canvas.width, canvas.height);
 
       if (cropArea) {
+        // 선택 외 부분 어둡게
         ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+        // 선택 영역 선명하게 복원
         ctx.drawImage(
           loadedImage,
           (cropArea.x / canvas.width) * loadedImage.width,
@@ -224,6 +196,7 @@
           cropArea.x, cropArea.y, cropArea.w, cropArea.h
         );
 
+        // 선택 박스 테두리
         ctx.strokeStyle = '#6366f1';
         ctx.lineWidth = 2;
         ctx.strokeRect(cropArea.x, cropArea.y, cropArea.w, cropArea.h);
@@ -277,6 +250,7 @@
       drawCanvas();
     }
 
+    // 선택 영역을 이미지 DataURL로 추출
     function getSelectedImageData() {
       if (!loadedImage) return null;
       
@@ -305,7 +279,7 @@
       return tempCanvas.toDataURL('image/jpeg', 0.85);
     }
 
-    // AI API 요청
+    // API 요청
     async function requestTranslation() {
       const loading = document.getElementById('loading');
       const resultSec = document.getElementById('resultSection');
@@ -356,98 +330,6 @@
       navigator.clipboard.writeText(text).then(() => {
         alert('결과가 클립보드에 복사되었습니다.');
       });
-    }
-  </script>
-
-  <!-- Firebase SDK (v10 JS Client via CDN) 및 파이어스토어 연동 -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-    // 전달받은 Firebase 웹 설정값
-    const firebaseConfig = {
-      apiKey: "AIzaSyAdOIUeDgE19_72HEmjDpajtBUMor_BE4Y",
-      authDomain: "rainbow-d7005.firebaseapp.com",
-      projectId: "rainbow-d7005",
-      storageBucket: "rainbow-d7005.firebasestorage.app",
-      messagingSenderId: "1010663821123",
-      appId: "1:1010663821123:web:e4aea7cac11c5f23a3a9f6"
-    };
-
-    // Firebase 초기화
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const boardRef = collection(db, "opinions");
-
-    const boardList = document.getElementById('boardList');
-    const boardEmpty = document.getElementById('boardEmpty');
-
-    // 최신순 정렬(createdAt 내림차순) 및 실시간 바인딩
-    const q = query(boardRef, orderBy("createdAt", "desc"));
-    
-    onSnapshot(q, (snapshot) => {
-      boardList.innerHTML = '';
-      if (snapshot.empty) {
-        boardEmpty.classList.remove('hidden');
-      } else {
-        boardEmpty.classList.add('hidden');
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          const dateStr = data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleString('ko-KR') : '방금 전';
-          
-          const card = document.createElement('div');
-          card.className = "bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm";
-          card.innerHTML = `
-            <div class="flex justify-between items-center mb-2">
-              <span class="font-semibold text-slate-700 text-sm"><i class="fa-solid fa-user-tag text-indigo-500 mr-1"></i>${escapeHtml(data.nickname || '익명')}</span>
-              <span class="text-xs text-slate-400">${dateStr}</span>
-            </div>
-            <p class="text-slate-700 text-sm whitespace-pre-wrap">${escapeHtml(data.content || '')}</p>
-          `;
-          boardList.appendChild(card);
-        });
-      }
-    }, (error) => {
-      console.error("Firestore Error:", error);
-    });
-
-    // 글 등록 기능
-    window.submitOpinion = async function() {
-      const nicknameInput = document.getElementById('boardNickname');
-      const contentInput = document.getElementById('boardContent');
-      const submitBtn = document.getElementById('boardSubmitBtn');
-
-      const nickname = nicknameInput.value.trim() || '익명';
-      const content = contentInput.value.trim();
-
-      if (!content) {
-        alert('의견 내용을 입력해 주세요.');
-        return;
-      }
-
-      submitBtn.disabled = true;
-      submitBtn.innerText = '등록 중...';
-
-      try {
-        await addDoc(boardRef, {
-          nickname: nickname,
-          content: content,
-          createdAt: serverTimestamp()
-        });
-        contentInput.value = '';
-        nicknameInput.value = '';
-        alert('의견이 성공적으로 등록되었습니다!');
-      } catch (e) {
-        console.error("의견 저장 실패:", e);
-        alert('의견 등록에 실패했습니다. Firestore 보안 규칙을 확인해 주세요.');
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane mr-1"></i> 의견 등록';
-      }
-    };
-
-    function escapeHtml(str) {
-      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
   </script>
 </body>
