@@ -10,7 +10,6 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: '서버에 GEMINI_API_KEY 설정이 되어있지 않습니다.' });
   }
 
-  // 요청 스타일별 프롬프트 가이드 정의
   const styleInstructions = {
     natural: "자연스러운 한국어 번역 스타일: 영문의 의미를 완벽히 전달하되, 한국어 모국어 화자가 읽기에 어색함이 없는 자연스러운 표현으로 번역하세요.",
     direct: "정확한 직역 스타일: 영문의 문장 구조와 단어의 본래 의미를 가급적 그대로 살려 직역하세요.",
